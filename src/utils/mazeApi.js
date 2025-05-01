@@ -7,5 +7,6 @@
         }
     );
     if (!res.ok) throw new Error("Erro ao buscar labirinto");
-    return res.json();
+    const maze = await res.json();
+    return maze.maze;
 }

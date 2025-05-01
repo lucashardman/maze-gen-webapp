@@ -10,15 +10,7 @@ import MazeStats from "../../components/MazeStats";
 
 export async function getServerSideProps() {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    const res = await fetch(
-        `${process.env.MAZE_API_URI}?height=15&width=20&mazeAlgorithm=RandomizedKruskal&seed=-1`,
-        {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-        }
-    );
-    const maze = await res.json();
-
+    const maze = await fetchMaze(process.env.MAZE_API_URI, 20, 15, "RandomizedKruskal", -1)
     return {
         props: {
             maze,
