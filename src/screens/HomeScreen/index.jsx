@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback, useRef } from "react";
+import html2canvas from "html2canvas";
 
 export async function getServerSideProps() {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -23,6 +24,12 @@ export async function getServerSideProps() {
 }
 
 function HomeScreen({ maze: initialMaze, apiUri }) {
+    // Parâmetros de personalização
+    const [width, setWidth] = useState(20); // Largura (X)
+    const [height, setHeight] = useState(15); // Comprimento (Y)
+    const [cellSize, setCellSize] = useState(40); // Tamanho da célula em pixels
+    const [showSettings, setShowSettings] = useState(false);
+
     const [maze, setMaze] = useState(initialMaze);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPoint] = useState({ x: 0, y: 0 });
@@ -35,6 +42,9 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
     const [showVisitedCells, setShowVisitedCells] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Ref para o labirinto (para download)
+    const mazeRef = useRef(null);
+
     // Função para atualizar a posição do jogador
     const movePlayer = useCallback((newX, newY) => {
         if (
@@ -43,11 +53,9 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
             newY >= 0 &&
             newY < maze.length
         ) {
-            // Atualiza a posição do jogador
             setPosition({ x: newX, y: newY });
             setMoveCount(prev => prev + 1);
 
-            // Verifica se chegou ao final
             if (newX === finishPoint.x && newY === finishPoint.y) {
                 setGameCompleted(true);
             }
@@ -91,16 +99,20 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
         setShowVisitedCells(prev => !prev);
     }, []);
 
-    // Função para gerar um novo labirinto
+    // Toggle para mostrar/ocultar configurações
+    const toggleSettings = useCallback(() => {
+        setShowSettings(prev => !prev);
+    }, []);
+
+    // Função para gerar um novo labirinto com os parâmetros atuais
     const generateNewMaze = useCallback(async () => {
         try {
             setIsLoading(true);
 
-            // Gerar um seed aleatório para ter labirintos diferentes
             const randomSeed = Math.floor(Math.random() * 1000000);
 
             const response = await fetch(
-                `${apiUri}?height=15&width=20&mazeAlgorithm=RandomizedKruskal&seed=${randomSeed}`,
+                `${apiUri}?height=${height}&width=${width}&mazeAlgorithm=RandomizedKruskal&seed=${randomSeed}`,
                 {
                     method: "GET",
                     headers: {
@@ -115,25 +127,61 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
 
             const newMaze = await response.json();
 
-            // Atualizar o estado com o novo labirinto
             setMaze(newMaze);
             setFinishPoint({ x: newMaze[0].length - 1, y: newMaze.length - 1 });
 
-            // Resetar o jogo para o novo labirinto
             setPosition({ x: 0, y: 0 });
             setVisitedCells(Array.from({ length: newMaze.length }, () => Array(newMaze[0].length).fill(false)));
             setMoveCount(0);
             setGameCompleted(false);
+
+            setShowSettings(false);
         } catch (error) {
             console.error("Erro ao gerar novo labirinto:", error);
             alert("Não foi possível gerar um novo labirinto. Tente novamente mais tarde.");
         } finally {
             setIsLoading(false);
         }
-    }, [apiUri]);
+    }, [apiUri, height, width]);
+
+    // Validar e atualizar a largura
+    const handleWidthChange = (e) => {
+        const value = parseInt(e.target.value);
+        if (value >= 5 && value <= 50) {
+            setWidth(value);
+        }
+    };
+
+    // Validar e atualizar a altura
+    const handleHeightChange = (e) => {
+        const value = parseInt(e.target.value);
+        if (value >= 5 && value <= 50) {
+            setHeight(value);
+        }
+    };
+
+    // Validar e atualizar o tamanho da célula
+    const handleCellSizeChange = (e) => {
+        const value = parseInt(e.target.value);
+        if (value >= 6 && value <= 100) {
+            setCellSize(value);
+        }
+    };
+
+    // Download do labirinto como imagem JPEG
+    const downloadMazeAsImage = async () => {
+        if (!mazeRef.current) return;
+        const canvas = await html2canvas(mazeRef.current, {
+            backgroundColor: null,
+            useCORS: true
+        });
+        const link = document.createElement("a");
+        link.download = "labirinto.jpeg";
+        link.href = canvas.toDataURL("image/jpeg", 1.0);
+        link.click();
+    };
 
     useEffect(() => {
-        // Marcar a célula atual como visitada
         setVisitedCells(prev => {
             const newVisited = [...prev];
             newVisited[position.y][position.x] = true;
@@ -146,27 +194,21 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
         };
     }, [position, handleKeyDown]);
 
-    // Gerar cores de gradiente para células visitadas
     const getVisitedCellColor = (rowIndex, cellIndex) => {
-        // Se a opção de mostrar células visitadas estiver desativada, retorna branco
         if (!showVisitedCells || !visitedCells[rowIndex][cellIndex]) return "bg-white";
-
-        // Distância da célula atual
         const distance = Math.abs(rowIndex - position.y) + Math.abs(cellIndex - position.x);
-
         if (distance <= 1) return "bg-indigo-100";
         if (distance <= 3) return "bg-indigo-50";
         return "bg-blue-50";
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-indigo-50 to-blue-100 p-4">
+        <div className="flex flex-col items-center justify-center p-4">
             <h1 className="text-3xl font-bold text-indigo-800 mb-2">Labirinto Mágico</h1>
             <p className="text-gray-600 mb-4">Encontre o caminho até a saída!</p>
 
             {/* Controles do jogo */}
-            <div className="flex flex-wrap justify-center gap-3 mb-6">
-                {/* Botão para reiniciar o jogo */}
+            <div className="flex flex-wrap justify-center gap-3 mb-4">
                 <button
                     onClick={resetGame}
                     disabled={isLoading}
@@ -176,7 +218,6 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                     Reiniciar Jogo
                 </button>
 
-                {/* Botão para gerar novo labirinto */}
                 <button
                     onClick={generateNewMaze}
                     disabled={isLoading}
@@ -196,7 +237,6 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                     )}
                 </button>
 
-                {/* Botão para mostrar/ocultar células visitadas */}
                 <button
                     onClick={toggleVisitedCells}
                     disabled={isLoading}
@@ -209,7 +249,119 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                     <span className={`w-4 h-4 rounded-full ${showVisitedCells ? "bg-indigo-600" : "bg-gray-400"}`}></span>
                     {showVisitedCells ? "Ocultar Rastro" : "Mostrar Rastro"}
                 </button>
+
+                <button
+                    onClick={toggleSettings}
+                    disabled={isLoading}
+                    className={`px-4 py-2 rounded-md transition-colors shadow-sm flex items-center gap-2
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+            ${showSettings
+                        ? "bg-yellow-200 text-yellow-800 hover:bg-yellow-300"
+                        : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"}`}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                    </svg>
+                    Configurações
+                </button>
+
+                <button
+                    onClick={downloadMazeAsImage}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-pink-600 text-white rounded-md transition-colors shadow-sm hover:bg-pink-700"
+                >
+                    Baixar Labirinto (JPEG)
+                </button>
             </div>
+
+            {/* Painel de configurações */}
+            {showSettings && (
+                <div className="w-full max-w-md mb-6 p-4 bg-white rounded-lg shadow-md border border-yellow-200">
+                    <h3 className="text-lg font-semibold text-yellow-800 mb-3">Personalizar Labirinto</h3>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Largura (células no eixo X): {width}
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="range"
+                                    min="5"
+                                    max="50"
+                                    value={width}
+                                    onChange={handleWidthChange}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <input
+                                    type="number"
+                                    min="5"
+                                    max="50"
+                                    value={width}
+                                    onChange={handleWidthChange}
+                                    className="w-16 p-1 text-center border border-gray-300 rounded"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Comprimento (células no eixo Y): {height}
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="range"
+                                    min="5"
+                                    max="50"
+                                    value={height}
+                                    onChange={handleHeightChange}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <input
+                                    type="number"
+                                    min="5"
+                                    max="50"
+                                    value={height}
+                                    onChange={handleHeightChange}
+                                    className="w-16 p-1 text-center border border-gray-300 rounded"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tamanho das células (pixels): {cellSize}
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="range"
+                                    min="6"
+                                    max="100"
+                                    value={cellSize}
+                                    onChange={handleCellSizeChange}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <input
+                                    type="number"
+                                    min="6"
+                                    max="100"
+                                    value={cellSize}
+                                    onChange={handleCellSizeChange}
+                                    className="w-16 p-1 text-center border border-gray-300 rounded"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={generateNewMaze}
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors shadow-sm"
+                        >
+                            Aplicar e Gerar
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {gameCompleted && (
                 <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-lg shadow-md">
@@ -217,7 +369,10 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                 </div>
             )}
 
-            <div className={`bg-white p-4 rounded-xl shadow-lg border border-indigo-100 relative ${isLoading ? 'opacity-50' : ''}`}>
+            <div
+                ref={mazeRef}
+                className={`bg-white p-4 rounded-xl shadow-lg border border-indigo-100 relative ${isLoading ? 'opacity-50' : ''}`}
+            >
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10 rounded-xl">
                         <div className="flex flex-col items-center">
@@ -241,7 +396,8 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                                 return (
                                     <div
                                         key={cellIndex}
-                                        className={`w-10 h-10 relative flex items-center justify-center transition-all duration-200
+                                        style={{ width: `${cellSize}px`, height: `${cellSize}px` }}
+                                        className={`relative flex items-center justify-center transition-all duration-200
                       ${cell.upEdge ? "border-t-transparent" : "border-t-2 border-t-indigo-800"} 
                       ${cell.downEdge ? "border-b-transparent" : "border-b-2 border-b-indigo-800"} 
                       ${cell.leftEdge ? "border-l-transparent" : "border-l-2 border-l-indigo-800"} 
@@ -249,18 +405,30 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                       ${isPlayerHere ? "bg-indigo-200" : getVisitedCellColor(rowIndex, cellIndex)}`}
                                     >
                                         {isStart && !isPlayerHere && (
-                                            <div className="absolute w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            <div className={`absolute rounded-full bg-blue-500`} style={{ width: `${cellSize * 0.3}px`, height: `${cellSize * 0.3}px` }}></div>
                                         )}
 
                                         {isFinish && (
-                                            <div className={`absolute w-6 h-6 ${isPlayerHere ? "bg-green-600" : "bg-green-500"} rounded-full shadow-md flex items-center justify-center ${!isPlayerHere && "animate-pulse"}`}>
-                                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                                            <div
+                                                className={`absolute rounded-full shadow-md flex items-center justify-center ${isPlayerHere ? "bg-green-600" : "bg-green-500"} ${!isPlayerHere && "animate-pulse"}`}
+                                                style={{ width: `${cellSize * 0.6}px`, height: `${cellSize * 0.6}px` }}
+                                            >
+                                                <div
+                                                    className="bg-white rounded-full"
+                                                    style={{ width: `${cellSize * 0.2}px`, height: `${cellSize * 0.2}px` }}
+                                                ></div>
                                             </div>
                                         )}
 
                                         {isPlayerHere && !isFinish && (
-                                            <div className="absolute w-6 h-6 bg-indigo-600 rounded-full shadow-md flex items-center justify-center">
-                                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                                            <div
+                                                className="absolute bg-indigo-600 rounded-full shadow-md flex items-center justify-center"
+                                                style={{ width: `${cellSize * 0.6}px`, height: `${cellSize * 0.6}px` }}
+                                            >
+                                                <div
+                                                    className="bg-white rounded-full"
+                                                    style={{ width: `${cellSize * 0.2}px`, height: `${cellSize * 0.2}px` }}
+                                                ></div>
                                             </div>
                                         )}
                                     </div>
@@ -277,6 +445,7 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                     <p>Movimentos: <span className="font-bold">{moveCount}</span></p>
                     <p>Células visitadas: <span className="font-bold">{visitedCells.flat().filter(Boolean).length}</span></p>
                     <p>Modo: <span className="font-bold">{showVisitedCells ? "Fácil" : "Difícil"}</span></p>
+                    <p>Tamanho: <span className="font-bold">{width}x{height}</span></p>
                 </div>
             </div>
         </div>
