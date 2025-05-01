@@ -23,12 +23,25 @@ export async function getServerSideProps() {
     };
 }
 
+const ALGORITHM_OPTIONS = [
+    "HuntAndKill",
+    "RecursiveDivision",
+    "SimplifiedPrim",
+    "Eller",
+    "BinaryTree",
+    "RandomizedKruskal",
+    "Sidewinder",
+    "AldousBroder",
+    "DepthFirstSearch"
+];
+
 function HomeScreen({ maze: initialMaze, apiUri }) {
     // Parâmetros de personalização
-    const [width, setWidth] = useState(20); // Largura (X)
-    const [height, setHeight] = useState(15); // Comprimento (Y)
-    const [cellSize, setCellSize] = useState(40); // Tamanho da célula em pixels
+    const [width, setWidth] = useState(20);
+    const [height, setHeight] = useState(15);
+    const [cellSize, setCellSize] = useState(40);
     const [showSettings, setShowSettings] = useState(false);
+    const [algorithm, setAlgorithm] = useState("RandomizedKruskal");
 
     const [maze, setMaze] = useState(initialMaze);
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -112,7 +125,7 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
             const randomSeed = Math.floor(Math.random() * 1000000);
 
             const response = await fetch(
-                `${apiUri}?height=${height}&width=${width}&mazeAlgorithm=RandomizedKruskal&seed=${randomSeed}`,
+                `${apiUri}?height=${height}&width=${width}&mazeAlgorithm=${algorithm}&seed=${randomSeed}`,
                 {
                     method: "GET",
                     headers: {
@@ -142,7 +155,7 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
         } finally {
             setIsLoading(false);
         }
-    }, [apiUri, height, width]);
+    }, [apiUri, height, width, algorithm]);
 
     // Validar e atualizar a largura
     const handleWidthChange = (e) => {
@@ -166,6 +179,11 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
         if (value >= 6 && value <= 100) {
             setCellSize(value);
         }
+    };
+
+    // Atualizar algoritmo
+    const handleAlgorithmChange = (e) => {
+        setAlgorithm(e.target.value);
     };
 
     // Download do labirinto como imagem JPEG
@@ -349,6 +367,20 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                                 />
                             </div>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Algoritmo de geração:
+                            </label>
+                            <select
+                                value={algorithm}
+                                onChange={handleAlgorithmChange}
+                                className="w-full p-2 border border-gray-300 rounded"
+                            >
+                                {ALGORITHM_OPTIONS.map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="mt-4 flex justify-end">
@@ -446,6 +478,7 @@ function HomeScreen({ maze: initialMaze, apiUri }) {
                     <p>Células visitadas: <span className="font-bold">{visitedCells.flat().filter(Boolean).length}</span></p>
                     <p>Modo: <span className="font-bold">{showVisitedCells ? "Fácil" : "Difícil"}</span></p>
                     <p>Tamanho: <span className="font-bold">{width}x{height}</span></p>
+                    <p>Algoritmo: <span className="font-bold">{algorithm}</span></p>
                 </div>
             </div>
         </div>
