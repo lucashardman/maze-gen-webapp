@@ -1,0 +1,121 @@
+﻿const THEMES = {
+    classic: {
+        label: "Clássico",
+        wall: "#3730a3",
+        cellBg: "#ffffff",
+        player: "#6366f1",
+        visited: "#c7d2fe",
+        playerBorder: "#fff",
+        start: "#3b82f6",
+        finish: "#22c55e",
+        finishPulse: "#4ade80",
+        borderRadius: "12px",
+        shadow: "0 4px 24px 0 rgba(55,48,163,0.10)"
+    },
+    neon: {
+        label: "Neon",
+        wall: "#39ff14",
+        cellBg: "#0f172a",
+        player: "#FF008E",
+        visited: "#0C1E7F",
+        playerBorder: "#fff",
+        start: "#0ea5e9",
+        finish: "#facc15",
+        finishPulse: "#fde047",
+        borderRadius: "8px",
+        shadow: "0 0 16px 2px #39ff14"
+    },
+    pastel: {
+        label: "Pastel",
+        wall: "#a3a3a3",
+        cellBg: "#fdf6fd",
+        player: "#f472b6",
+        visited: "#fbcfe8",
+        playerBorder: "#fff",
+        start: "#a5b4fc",
+        finish: "#fcd34d",
+        finishPulse: "#fde68a",
+        borderRadius: "16px",
+        shadow: "0 4px 24px 0 #fbcfe8"
+    },
+    dark: {
+        label: "Dark",
+        wall: "#f1f5f9",
+        cellBg: "#18181b",
+        player: "#fbbf24",
+        visited: "#334155",
+        playerBorder: "#18181b",
+        start: "#38bdf8",
+        finish: "#22d3ee",
+        finishPulse: "#67e8f9",
+        borderRadius: "8px",
+        shadow: "0 4px 24px 0 #0ea5e9"
+    },
+    cyberpunk: {
+        label: "Cyberpunk",
+        wall: "#ff00c8",
+        cellBg: "#1a1a2e",
+        player: "#00fff7",
+        visited: "#3a86ff",
+        playerBorder: "#ffbe0b",
+        start: "#ffbe0b",
+        finish: "#fb5607",
+        finishPulse: "#ff006e",
+        borderRadius: "10px",
+        shadow: "0 0 20px 2px #ff00c8"
+    },
+    forest: {
+        label: "Floresta",
+        wall: "#2e4600",
+        cellBg: "#a2c523",
+        player: "#386641",
+        visited: "#b7efc5",
+        playerBorder: "#fff",
+        start: "#f7b801",
+        finish: "#f18701",
+        finishPulse: "#f35b04",
+        borderRadius: "16px",
+        shadow: "0 4px 24px 0 #386641"
+    },
+    candy: {
+        label: "Doces",
+        wall: "#ff61a6",
+        cellBg: "#fff0f6",
+        player: "#ffb700",
+        visited: "#ffe066",
+        playerBorder: "#ff61a6",
+        start: "#ff61a6",
+        finish: "#ffb700",
+        finishPulse: "#ffe066",
+        borderRadius: "18px",
+        shadow: "0 4px 24px 0 #ff61a6"
+    },
+    ocean: {
+        label: "Oceano",
+        wall: "#023e8a",
+        cellBg: "#caf0f8",
+        player: "#0077b6",
+        visited: "#90e0ef",
+        playerBorder: "#fff",
+        start: "#00b4d8",
+        finish: "#03045e",
+        finishPulse: "#48cae4",
+        borderRadius: "14px",
+        shadow: "0 4px 24px 0 #0077b6"
+    },
+    lava: {
+        label: "Lava",
+        wall: "#ff5400",
+        cellBg: "#2d1e2f",
+        player: "#ffbd39",
+        visited: "#ff6f3c",
+        playerBorder: "#fff",
+        start: "#ffbd39",
+        finish: "#ff5400",
+        finishPulse: "#ff6f3c",
+        borderRadius: "12px",
+        shadow: "0 0 24px 0 #ff5400"
+    }
+};
+
+export default THEMES;
