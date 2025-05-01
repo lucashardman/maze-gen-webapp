@@ -17,21 +17,23 @@ export async function getServerSideProps() {
     return {
         props: {
             maze,
+            apiUri: process.env.MAZE_API_URI,
         },
     };
 }
 
-function HomeScreen({ maze }) {
+function HomeScreen({ maze: initialMaze, apiUri }) {
+    const [maze, setMaze] = useState(initialMaze);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPoint] = useState({ x: 0, y: 0 });
-    const [finishPoint] = useState({ x: maze[0].length - 1, y: maze.length - 1 });
+    const [finishPoint, setFinishPoint] = useState({ x: initialMaze[0].length - 1, y: initialMaze.length - 1 });
     const [visitedCells, setVisitedCells] = useState(
-        Array.from({ length: maze.length }, () => Array(maze[0].length).fill(false))
+        Array.from({ length: initialMaze.length }, () => Array(initialMaze[0].length).fill(false))
     );
     const [moveCount, setMoveCount] = useState(0);
     const [gameCompleted, setGameCompleted] = useState(false);
-    // Novo estado para controlar a visibilidade das células visitadas
     const [showVisitedCells, setShowVisitedCells] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Função para atualizar a posição do jogador
     const movePlayer = useCallback((newX, newY) => {
@@ -54,7 +56,7 @@ function HomeScreen({ maze }) {
 
     // Função para lidar com as teclas pressionadas
     const handleKeyDown = useCallback((event) => {
-        if (gameCompleted) return;
+        if (gameCompleted || isLoading) return;
 
         const { x, y } = position;
 
@@ -74,7 +76,7 @@ function HomeScreen({ maze }) {
             default:
                 break;
         }
-    }, [position, maze, movePlayer, gameCompleted]);
+    }, [position, maze, movePlayer, gameCompleted, isLoading]);
 
     // Resetar o jogo
     const resetGame = useCallback(() => {
@@ -88,6 +90,47 @@ function HomeScreen({ maze }) {
     const toggleVisitedCells = useCallback(() => {
         setShowVisitedCells(prev => !prev);
     }, []);
+
+    // Função para gerar um novo labirinto
+    const generateNewMaze = useCallback(async () => {
+        try {
+            setIsLoading(true);
+
+            // Gerar um seed aleatório para ter labirintos diferentes
+            const randomSeed = Math.floor(Math.random() * 1000000);
+
+            const response = await fetch(
+                `${apiUri}?height=15&width=20&mazeAlgorithm=RandomizedKruskal&seed=${randomSeed}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Falha ao carregar novo labirinto");
+            }
+
+            const newMaze = await response.json();
+
+            // Atualizar o estado com o novo labirinto
+            setMaze(newMaze);
+            setFinishPoint({ x: newMaze[0].length - 1, y: newMaze.length - 1 });
+
+            // Resetar o jogo para o novo labirinto
+            setPosition({ x: 0, y: 0 });
+            setVisitedCells(Array.from({ length: newMaze.length }, () => Array(newMaze[0].length).fill(false)));
+            setMoveCount(0);
+            setGameCompleted(false);
+        } catch (error) {
+            console.error("Erro ao gerar novo labirinto:", error);
+            alert("Não foi possível gerar um novo labirinto. Tente novamente mais tarde.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [apiUri]);
 
     useEffect(() => {
         // Marcar a célula atual como visitada
@@ -126,15 +169,39 @@ function HomeScreen({ maze }) {
                 {/* Botão para reiniciar o jogo */}
                 <button
                     onClick={resetGame}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+                    disabled={isLoading}
+                    className={`px-4 py-2 bg-indigo-600 text-white rounded-md transition-colors shadow-sm
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
                 >
                     Reiniciar Jogo
+                </button>
+
+                {/* Botão para gerar novo labirinto */}
+                <button
+                    onClick={generateNewMaze}
+                    disabled={isLoading}
+                    className={`px-4 py-2 bg-green-600 text-white rounded-md transition-colors shadow-sm flex items-center gap-2
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'}`}
+                >
+                    {isLoading ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Carregando...
+                        </>
+                    ) : (
+                        'Novo Labirinto'
+                    )}
                 </button>
 
                 {/* Botão para mostrar/ocultar células visitadas */}
                 <button
                     onClick={toggleVisitedCells}
+                    disabled={isLoading}
                     className={`px-4 py-2 rounded-md transition-colors shadow-sm flex items-center gap-2
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
             ${showVisitedCells
                         ? "bg-indigo-200 text-indigo-800 hover:bg-indigo-300"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
@@ -150,7 +217,19 @@ function HomeScreen({ maze }) {
                 </div>
             )}
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border border-indigo-100">
+            <div className={`bg-white p-4 rounded-xl shadow-lg border border-indigo-100 relative ${isLoading ? 'opacity-50' : ''}`}>
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10 rounded-xl">
+                        <div className="flex flex-col items-center">
+                            <svg className="animate-spin h-10 w-10 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p className="text-indigo-800 font-medium">Gerando novo labirinto...</p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-flow-row gap-0">
                     {maze.map((row, rowIndex) => (
                         <div key={rowIndex} className="flex">
