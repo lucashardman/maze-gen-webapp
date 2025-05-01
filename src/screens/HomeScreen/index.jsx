@@ -30,6 +30,8 @@ function HomeScreen({ maze }) {
     );
     const [moveCount, setMoveCount] = useState(0);
     const [gameCompleted, setGameCompleted] = useState(false);
+    // Novo estado para controlar a visibilidade das células visitadas
+    const [showVisitedCells, setShowVisitedCells] = useState(true);
 
     // Função para atualizar a posição do jogador
     const movePlayer = useCallback((newX, newY) => {
@@ -82,6 +84,11 @@ function HomeScreen({ maze }) {
         setGameCompleted(false);
     }, [maze]);
 
+    // Toggle para mostrar/ocultar células visitadas
+    const toggleVisitedCells = useCallback(() => {
+        setShowVisitedCells(prev => !prev);
+    }, []);
+
     useEffect(() => {
         // Marcar a célula atual como visitada
         setVisitedCells(prev => {
@@ -98,7 +105,8 @@ function HomeScreen({ maze }) {
 
     // Gerar cores de gradiente para células visitadas
     const getVisitedCellColor = (rowIndex, cellIndex) => {
-        if (!visitedCells[rowIndex][cellIndex]) return "bg-white";
+        // Se a opção de mostrar células visitadas estiver desativada, retorna branco
+        if (!showVisitedCells || !visitedCells[rowIndex][cellIndex]) return "bg-white";
 
         // Distância da célula atual
         const distance = Math.abs(rowIndex - position.y) + Math.abs(cellIndex - position.x);
@@ -111,17 +119,34 @@ function HomeScreen({ maze }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-indigo-50 to-blue-100 p-4">
             <h1 className="text-3xl font-bold text-indigo-800 mb-2">Labirinto Mágico</h1>
-            <p className="text-gray-600 mb-6">Encontre o caminho até a saída!</p>
+            <p className="text-gray-600 mb-4">Encontre o caminho até a saída!</p>
+
+            {/* Controles do jogo */}
+            <div className="flex flex-wrap justify-center gap-3 mb-6">
+                {/* Botão para reiniciar o jogo */}
+                <button
+                    onClick={resetGame}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                    Reiniciar Jogo
+                </button>
+
+                {/* Botão para mostrar/ocultar células visitadas */}
+                <button
+                    onClick={toggleVisitedCells}
+                    className={`px-4 py-2 rounded-md transition-colors shadow-sm flex items-center gap-2
+            ${showVisitedCells
+                        ? "bg-indigo-200 text-indigo-800 hover:bg-indigo-300"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                >
+                    <span className={`w-4 h-4 rounded-full ${showVisitedCells ? "bg-indigo-600" : "bg-gray-400"}`}></span>
+                    {showVisitedCells ? "Ocultar Rastro" : "Mostrar Rastro"}
+                </button>
+            </div>
 
             {gameCompleted && (
                 <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-lg shadow-md">
                     <p className="font-bold">Parabéns! Você completou o labirinto em {moveCount} movimentos!</p>
-                    <button
-                        onClick={resetGame}
-                        className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-                    >
-                        Jogar Novamente
-                    </button>
                 </div>
             )}
 
@@ -169,9 +194,10 @@ function HomeScreen({ maze }) {
 
             <div className="mt-6 text-gray-700 text-center">
                 <p className="mb-2">Use as setas do teclado para navegar pelo labirinto</p>
-                <div className="flex space-x-4 text-sm">
+                <div className="flex flex-wrap justify-center gap-4 text-sm">
                     <p>Movimentos: <span className="font-bold">{moveCount}</span></p>
                     <p>Células visitadas: <span className="font-bold">{visitedCells.flat().filter(Boolean).length}</span></p>
+                    <p>Modo: <span className="font-bold">{showVisitedCells ? "Fácil" : "Difícil"}</span></p>
                 </div>
             </div>
         </div>
