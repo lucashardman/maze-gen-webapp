@@ -10,7 +10,8 @@
         finish: "#22c55e",
         finishPulse: "#4ade80",
         borderRadius: "12px",
-        shadow: "0 4px 24px 0 rgba(55,48,163,0.10)"
+        shadow: "0 4px 24px 0 rgba(55,48,163,0.10)",
+        solution: "#8b5cf6"
     },
     neon: {
         label: "Neon",
@@ -23,7 +24,8 @@
         finish: "#facc15",
         finishPulse: "#fde047",
         borderRadius: "8px",
-        shadow: "0 0 16px 2px #39ff14"
+        shadow: "0 0 16px 2px #39ff14",
+        solution: "#00ffff"
     },
     pastel: {
         label: "Pastel",
@@ -36,7 +38,8 @@
         finish: "#fcd34d",
         finishPulse: "#fde68a",
         borderRadius: "16px",
-        shadow: "0 4px 24px 0 #fbcfe8"
+        shadow: "0 4px 24px 0 #fbcfe8",
+        solution: "#c084fc"
     },
     dark: {
         label: "Dark",
@@ -49,7 +52,8 @@
         finish: "#22d3ee",
         finishPulse: "#67e8f9",
         borderRadius: "8px",
-        shadow: "0 4px 24px 0 #0ea5e9"
+        shadow: "0 4px 24px 0 #0ea5e9",
+        solution: "#ec4899"
     },
     cyberpunk: {
         label: "Cyberpunk",
@@ -62,7 +66,8 @@
         finish: "#fb5607",
         finishPulse: "#ff006e",
         borderRadius: "10px",
-        shadow: "0 0 20px 2px #ff00c8"
+        shadow: "0 0 20px 2px #ff00c8",
+        solution: "#00ff9f"
     },
     forest: {
         label: "Floresta",
@@ -75,7 +80,8 @@
         finish: "#f18701",
         finishPulse: "#f35b04",
         borderRadius: "16px",
-        shadow: "0 4px 24px 0 #386641"
+        shadow: "0 4px 24px 0 #386641",
+        solution: "#4c1d95"
     },
     candy: {
         label: "Doces",
@@ -88,7 +94,8 @@
         finish: "#ffb700",
         finishPulse: "#ffe066",
         borderRadius: "18px",
-        shadow: "0 4px 24px 0 #ff61a6"
+        shadow: "0 4px 24px 0 #ff61a6",
+        solution: "#9333ea"
     },
     ocean: {
         label: "Oceano",
@@ -101,7 +108,8 @@
         finish: "#03045e",
         finishPulse: "#48cae4",
         borderRadius: "14px",
-        shadow: "0 4px 24px 0 #0077b6"
+        shadow: "0 4px 24px 0 #0077b6",
+        solution: "#1e40af"
     },
     lava: {
         label: "Lava",
@@ -114,7 +122,8 @@
         finish: "#ff5400",
         finishPulse: "#ff6f3c",
         borderRadius: "12px",
-        shadow: "0 0 24px 0 #ff5400"
+        shadow: "0 0 24px 0 #ff5400",
+        solution: "#7f1d1d"
     }
 };
 

@@ -7,13 +7,15 @@ import MazeBoard from "../../components/MazeBoard";
 import MazeControls from "../../components/MazeControls";
 import MazeSettings from "../../components/MazeSettings";
 import MazeStats from "../../components/MazeStats";
+import MazeSolution from "@/components/MazeSolution";
 
 export async function getServerSideProps() {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     const maze = await fetchMaze(process.env.MAZE_API_URI, 20, 15, "RandomizedKruskal", -1)
     return {
         props: {
-            maze,
+            maze: maze.maze,
+            seed: maze.seed,
             apiUri: process.env.MAZE_API_URI,
         },
     };
@@ -31,15 +33,17 @@ const ALGORITHM_OPTIONS = [
     "DepthFirstSearch"
 ];
 
-export default function HomeScreen({ maze: initialMaze, apiUri }) {
+export default function HomeScreen({ maze: initialMaze, seed: initialSeed, apiUri }) {
     const [width, setWidth] = useState(20);
     const [height, setHeight] = useState(15);
     const [cellSize, setCellSize] = useState(40);
+    const [seed, setSeed] = useState(initialSeed);
     const [showSettings, setShowSettings] = useState(false);
     const [algorithm, setAlgorithm] = useState("RandomizedKruskal");
     const [theme, setTheme] = useState("classic");
     const [showVisitedCells, setShowVisitedCells] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [solution, setSolution] = useState(null);
 
     const {
         maze, setMaze,
@@ -100,10 +104,12 @@ export default function HomeScreen({ maze: initialMaze, apiUri }) {
             setIsLoading(true);
             const randomSeed = Math.floor(Math.random() * 1000000);
             const newMaze = await fetchMaze(apiUri, width, height, algorithm, randomSeed);
-            setMaze(newMaze);
-            setFinishPoint({ x: newMaze[0].length - 1, y: newMaze.length - 1 });
+            setMaze(newMaze.maze);
+            setSeed(newMaze.seed)
+            setSolution(null);
+            setFinishPoint({ x: newMaze.maze[0].length - 1, y: newMaze.maze.length - 1 });
             setPosition({ x: 0, y: 0 });
-            setVisitedCells(Array.from({ length: newMaze.length }, () => Array(newMaze[0].length).fill(false)));
+            setVisitedCells(Array.from({ length: newMaze.maze.length }, () => Array(newMaze.maze[0].length).fill(false)));
             setMoveCount(0);
             setGameCompleted(false);
             setShowSettings(false);
@@ -125,6 +131,10 @@ export default function HomeScreen({ maze: initialMaze, apiUri }) {
         link.download = "labirinto.jpeg";
         link.href = canvas.toDataURL("image/jpeg", 1.0);
         link.click();
+    };
+
+    const handleSolutionFound = (solutionData) => {
+        setSolution(solutionData);
     };
 
     return (
@@ -191,6 +201,7 @@ export default function HomeScreen({ maze: initialMaze, apiUri }) {
                 )}
                 <MazeBoard
                     maze={maze}
+                    solutionCells={solution}
                     position={position}
                     visitedCells={visitedCells}
                     cellSize={cellSize}
@@ -200,7 +211,15 @@ export default function HomeScreen({ maze: initialMaze, apiUri }) {
                     finishPoint={finishPoint}
                 />
             </div>
-
+            <MazeSolution
+                apiUri={apiUri}
+                width={width}
+                height={height}
+                mazeAlgorithm={algorithm}
+                pathfindingAlgorithm="DepthFirstSearch"
+                seed={seed}
+                onSolutionFound={handleSolutionFound}
+            />
             <MazeStats
                 moveCount={moveCount}
                 visitedCells={visitedCells}
