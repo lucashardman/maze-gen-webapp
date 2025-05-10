@@ -1,8 +1,8 @@
 ﻿import {useState, useRef, useEffect} from "react";
 import html2canvas from "html2canvas";
 import THEMES from "../../themes";
-import { fetchMaze } from "../../utils/mazeApi";
-import { useMazeGame } from "../../utils/useMazeGame";
+import { fetchMaze } from "@/utils/mazeApi";
+import { useMazeGame } from "@/utils/useMazeGame";
 import MazeBoard from "../../components/MazeBoard";
 import MazeControls from "../../components/MazeControls";
 import MazeSettings from "../../components/MazeSettings";
@@ -15,7 +15,7 @@ export async function getServerSideProps() {
     return {
         props: {
             maze: maze.maze,
-            seed: maze.seed,
+            seed: -1,
             apiUri: process.env.MAZE_API_URI,
         },
     };
@@ -38,6 +38,7 @@ export default function HomeScreen({ maze: initialMaze, seed: initialSeed, apiUr
     const [height, setHeight] = useState(15);
     const [cellSize, setCellSize] = useState(40);
     const [seed, setSeed] = useState(initialSeed);
+    const [lastSeed, setLastSeed] = useState(seed);
     const [showSettings, setShowSettings] = useState(false);
     const [algorithm, setAlgorithm] = useState("RandomizedKruskal");
     const [theme, setTheme] = useState("classic");
@@ -102,10 +103,10 @@ export default function HomeScreen({ maze: initialMaze, seed: initialSeed, apiUr
     const generateNewMaze = async () => {
         try {
             setIsLoading(true);
-            const randomSeed = Math.floor(Math.random() * 1000000);
-            const newMaze = await fetchMaze(apiUri, width, height, algorithm, randomSeed);
+            const newMaze = await fetchMaze(apiUri, width, height, algorithm, seed);
+            setLastSeed(newMaze.seed);
+            setSeed(-1)
             setMaze(newMaze.maze);
-            setSeed(newMaze.seed)
             setSolution(null);
             setFinishPoint({ x: newMaze.maze[0].length - 1, y: newMaze.maze.length - 1 });
             setPosition({ x: 0, y: 0 });
@@ -159,10 +160,12 @@ export default function HomeScreen({ maze: initialMaze, seed: initialSeed, apiUr
                     cellSize={cellSize}
                     algorithm={algorithm}
                     theme={theme}
+                    seed={seed}
                     onWidthChange={e => setWidth(Number(e.target.value))}
                     onHeightChange={e => setHeight(Number(e.target.value))}
                     onCellSizeChange={e => setCellSize(Number(e.target.value))}
                     onAlgorithmChange={e => setAlgorithm(e.target.value)}
+                    onSeedChange={e => setSeed(e.target.value)}
                     onThemeChange={e => setTheme(e.target.value)}
                     algorithmOptions={ALGORITHM_OPTIONS}
                     themes={THEMES}
@@ -224,6 +227,7 @@ export default function HomeScreen({ maze: initialMaze, seed: initialSeed, apiUr
                 moveCount={moveCount}
                 visitedCells={visitedCells}
                 showVisitedCells={showVisitedCells}
+                seed={lastSeed}
                 width={width}
                 height={height}
                 algorithm={algorithm}
