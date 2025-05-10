@@ -1,7 +1,7 @@
 ﻿import React from "react";
 
 export default function MazeSettings({
-                                         width, height, cellSize, algorithm, theme,
+                                         width, height, cellSize, algorithm, theme, seed, onSeedChange,
                                          onWidthChange, onHeightChange, onCellSizeChange, onAlgorithmChange, onThemeChange,
                                          algorithmOptions, themes, onApply, isLoading
                                      }) {
@@ -9,6 +9,18 @@ export default function MazeSettings({
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 mb-6">
             <h2 className="text-lg font-bold mb-4">Configurações</h2>
             <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Seed (-1 para gerar aleatoriamente):
+                    </label>
+
+                    <input
+                        type="number"
+                        value={seed}
+                        onChange={onSeedChange}
+                        className="w-28 p-1 text-center border border-gray-300 rounded"
+                    />
+                </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Largura:
